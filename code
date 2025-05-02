@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Offers vs. GPA by Gender</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .scatterplot {
+      margin-top: 30px;
+    }
+    .dot {
+      stroke-width: 1.5;
+      opacity: 0.7;
+    }
+    .dot:hover {
+      opacity: 1;
+      stroke: black;
+    }
+    .tooltip {
+      position: absolute;
+      text-align: center;
+      padding: 8px;
+      background-color: pink;
+      border-radius: 5px;
+      pointer-events: none;
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Job Offers vs University GPA by Gender</h2>
+  <svg width="800" height="500" class="scatterplot"></svg>
+  <div class="tooltip"></div>
+
+  <script>
+    // Load the CSV data
+    d3.csv("data.final.csv").then(function(data) {
+      
+      // Parse the data
+      data.forEach(function(d) {
+        d.University_GPA = +d.University_GPA; // Convert GPA to number
+        d.Job_Offers = +d.Job_Offers; // Convert Job Offers to number
+      });
+
+      // Set margins and dimensions
+      const margin = { top: 20, right: 30, bottom: 40, left: 60 };
+      const width = 800 - margin.left - margin.right;
+      const height = 500 - margin.top - margin.bottom;
+
+      // Create SVG canvas
+      const svg = d3.select("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      // Create x and y scales
+      const x = d3.scaleLinear()
+        .domain([1.9, d3.max(data, d => d.University_GPA)])
+        .range([0, width]);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.Job_Offers)])
+        .range([height, 0]);
+
+      // Create x and y axis
+      const xAxis = svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+      const yAxis = svg.append("g")
+        .call(d3.axisLeft(y));
+
+      // Add axis labels
+      svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + "," + (height + margin.bottom - 10) + ")")
+        .style("text-anchor", "middle")
+        .text("University GPA");
+
+      svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left + 10)
+        .attr("x", 0 - (height / 2))
+        .style("text-anchor", "middle")
+        .text("Job Offers");
+
+      // Color scale for gender
+      const color = d3.scaleOrdinal()
+        .domain(["Male", "Female", "Other"])
+        .range(["#1926e4", "#c619e4", "#ace419"]);
+
+      // Tooltip
+      const tooltip = d3.select(".tooltip");
+
+      // Plot the dots (scatter plot)
+      svg.selectAll(".dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.University_GPA))
+        .attr("cy", d => y(d.Job_Offers))
+        .attr("r", 6)
+        .style("fill", d => color(d.Gender))
+        .on("mouseover", function(event, d) {
+          tooltip.style("visibility", "visible")
+            .html("Student: " + d.Student_ID + "<br>Gender: " + d.Gender + "<br>GPA: " + d.University_GPA + "<br>Job Offers: " + d.Job_Offers);
+        })
+        .on("mousemove", function(event) {
+          tooltip.style("top", (event.pageY - 10) + "px")
+            .style("left", (event.pageX + 10) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("visibility", "hidden");
+        });
+
+    }).catch(function(error) {
+      console.error("Error loading or processing data: ", error);
+    });
+  </script>
+
+</body>
+</html>
